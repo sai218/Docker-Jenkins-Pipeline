@@ -21,14 +21,5 @@ node{
         sh "${MVNHOME}/bin/mvn clean install"
     }
     
-    //Building Docker Custom Image//
-    stage('Build Docker image'){
-        
-        sshagent(['dockerssh']) {
-        sh "ssh -o StrictHostKeyChecking=no ubuntu@ec2-34-229-148-1.compute-1.amazonaws.com"
-        sh 'docker build -t sai218/harishtom:1 .'
-            
-        }
-    }
-       
+   
 }
