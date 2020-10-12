@@ -1,0 +1,46 @@
+node{
+      def DOCKER_TAG = getVersion()
+      def DEVUSERNAME = 'ubuntu'
+      def DEVNODEIP =  'ec2-52-37-220-179.us-west-2.compute.amazonaws.com'
+      
+      
+    stage('git checkout'){
+        /* git clone url */
+        git credentialsId: 'sai218', url: 'https://github.com/sai218/Docker-Jenkins-Pipeline.git', branch: 'master'
+        }
+    stage('mvn goals'){
+        
+        def MVNHOME = tool name: 'harish-mvn-3.6.1', type: 'maven'
+        sh " ${MVNHOME}/bin/mvn clean install "
+    }
+    stage(' docker build image'){
+        // docker build //
+        
+        sh "docker build . -t sai218/uma:${DOCKER_TAG}"
+    }
+    
+    stage(' login and push'){
+        // docker login //
+        withCredentials([string(credentialsId: 'dokerhubpswd', variable: 'dockerhub')]) {
+            sh "docker login -u sai218 -p ${dockerhub}"
+}
+        // docker push //
+        
+        sh "docker push sai218/uma:${DOCKER_TAG}"
+    }
+    stage('containerdeploy'){
+        // ssh agent login and container creation //
+        sshagent(['sshagentid']) {
+            def dockerruncmd = "sudo docker run --name sai2 -d -p 8082:8080 sai218/uma:${DOCKER_TAG}"
+           sh "ssh -o StrictHostKeyChecking=no ${DEVUSERNAME}@${DEVNODEIP} ${dockerruncmd}"
+}
+        
+    }
+    
+    
+} 
+def getVersion(){
+    def commit = sh label: '', returnStdout: true, script: 'git rev-parse --short HEAD'
+    return commit
+    
+}
